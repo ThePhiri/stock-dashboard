@@ -1,6 +1,5 @@
 import React, {useState, useContext, useEffect } from "react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { mockHistoricalData } from "../constants/mock";
 import { convertUnixTimeStampToDate, convertdateToUnixTimeStamp, createDate } from "../helpers/date-helper";
 import Card from "./Card";
 import { chartConfig } from "../constants/config";
@@ -10,11 +9,21 @@ import { fetchHistoricalData } from "../api/stock-api";
 import StockContext from "../context/stockContext";
 
 const Chart = () => {
-    const [data, setData] = useState(mockHistoricalData);
+    const [data, setData] = useState([]);
     const [filter, setFilter] = useState("1W");
 
     const {darkMode} = useContext(ThemeContext);
     const { stockSymbol } = useContext(StockContext);
+
+    const formatData = (data ) => {
+        return data.c.map((item, index) => {
+            return {
+                value: item.toFixed(2),
+                date: convertUnixTimeStampToDate(data.t[index]),
+            };
+            
+        });
+    };
 
     useEffect(() => {
         const getDateRange = () => {
@@ -28,20 +37,20 @@ const Chart = () => {
             return { startTimestampUnix, endTimestampUnix };
         }
         const updateChartData = async () => {
-
+            try {
+                const { startTimestampUnix, endTimestampUnix } = getDateRange();
+                const resolution = chartConfig[filter].resolution;
+                const result = await fetchHistoricalData(stockSymbol,resolution, startTimestampUnix, endTimestampUnix);
+                setData(formatData(result));
+            } catch (error) {
+                setData([]);
+                console.log(error);
+            }
         };
-
+        updateChartData();
     }, [stockSymbol, filter]);
 
-    const formatData = ( ) => {
-        return data.c.map((item, index) => {
-            return {
-                value: item.toFixed(2),
-                date: convertUnixTimeStampToDate(data.t[index]),
-            };
-            
-        });
-    };
+
     return <Card>
         <ul className="flex absolute top-2 right-2 z-40">
             {Object.keys(chartConfig).map((item) => {
@@ -55,7 +64,7 @@ const Chart = () => {
             })}
         </ul>
         <ResponsiveContainer>
-            <AreaChart data={formatData(data)}>
+            <AreaChart data={data}>
             <defs>
             <linearGradient id="chartColor" x1="0" y1="0" x2="0" y2="1">
               <stop
