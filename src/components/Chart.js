@@ -1,17 +1,37 @@
-import React, {useState, useContext} from "react";
+import React, {useState, useContext, useEffect } from "react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { mockHistoricalData } from "../constants/mock";
-import { convertUnixTimeStampToDate } from "../helpers/date-helper";
+import { convertUnixTimeStampToDate, convertdateToUnixTimeStamp, createDate } from "../helpers/date-helper";
 import Card from "./Card";
 import { chartConfig } from "../constants/config";
 import ChartFilter from "./ChartFilter";
 import ThemeContext from "../context/ThemeContext";
+import { fetchHistoricalData } from "../api/stock-api";
+import StockContext from "../context/stockContext";
 
 const Chart = () => {
     const [data, setData] = useState(mockHistoricalData);
     const [filter, setFilter] = useState("1W");
 
     const {darkMode} = useContext(ThemeContext);
+    const { stockSymbol } = useContext(StockContext);
+
+    useEffect(() => {
+        const getDateRange = () => {
+            const { days, weeks, months, years } = chartConfig[filter];
+            const endDate = new Date();
+            const startDate = createDate(endDate, -days, -weeks, -months, -years);
+
+            const startTimestampUnix = convertdateToUnixTimeStamp(startDate);
+            const endTimestampUnix = convertdateToUnixTimeStamp(endDate);
+
+            return { startTimestampUnix, endTimestampUnix };
+        }
+        const updateChartData = async () => {
+
+        };
+
+    }, [stockSymbol, filter]);
 
     const formatData = ( ) => {
         return data.c.map((item, index) => {
